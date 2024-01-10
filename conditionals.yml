@@ -1,0 +1,35 @@
+---
+- name: Install softwares
+  hosts: all
+  vars:
+    packages:
+      - name: nginx
+        required: true
+      - name: mysql
+        required: true
+      - name: apache
+        required: false
+  tasks:
+    - name: "Install on Debian {{ item.name }}"
+      ansible.builtin.apt:
+        name: "{{ item.name }}"
+        state: present
+      when: item.required
+      loop: "{{ packages }}"
+
+- name: Check status of a service and email if it's down
+  hosts: localhost
+  tasks:
+    - name: "Check service httpd status"
+      ansible.builtin.service:
+        name: httpd
+        state: started
+      register: result
+      changed_when: false
+
+    - name: "Send email if httpd is down"
+      community.general.mail:
+        to: mr.yutran@gmail.com
+        subject: "Service Alert"
+        body: "Httpd Service is down"
+      when: result.is_failed

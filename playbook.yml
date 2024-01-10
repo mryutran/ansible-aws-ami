@@ -1,6 +1,6 @@
 - name: Create EC2 instance
   hosts: localhost
-  gather_facts: False
+  gather_facts: true
   tasks:
     - name: Launch instance
       amazon.aws.ec2_instance:
@@ -17,12 +17,8 @@
           assign_public_ip: yes
       register: ec2
 
-    # - name: Debug EC2 instances
-    #   debug:
-    #     var: ec2.instances
-
     - name: Add new instance to host group
-      add_host:
+      ansible.builtin.add_host:
         hostname: "{{ item.public_ip_address }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no -i ~/.ssh/smartpro.pem"
         groupname: dynamic_hosts
@@ -30,13 +26,13 @@
 
 - name: Wait for EC2 instance to be running
   hosts: localhost
-  gather_facts: False
+  gather_facts: true
   tasks:
     - name: Wait for the instance to be in 'running' state
-      wait_for:
-        timeout: 320 
+      ansible.builtin.wait_for:
+        timeout: 320
         delay: 120
-        host: "{{ ec2.instances[0].network_interfaces[0].association.public_ip }}" 
+        host: "{{ ec2.instances[0].network_interfaces[0].association.public_ip }}"
         port: 22
         state: started
 
@@ -50,10 +46,11 @@
     - name: Update package manager and install Python3
       ansible.builtin.shell:
         cmd: sudo yum update -y && sudo yum install -y python3
+      changed_when: false
 
 - name: Create AMI and Terminate EC2
   hosts: localhost
-  gather_facts: False
+  gather_facts: false
   tasks:
     - name: Create AMI
       amazon.aws.ec2_ami:
